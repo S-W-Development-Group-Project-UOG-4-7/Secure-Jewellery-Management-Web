@@ -18,14 +18,14 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-    'username', // <--- Added this
-    'email',
-    'password',
-    'role',     // <--- Added this
-    'otp_code', // <--- Added this
-    'otp_expiry', // <--- Added this
-    'is_active' // <--- Added this
-];
+        'username',   // Custom: Used for login instead of name
+        'email',
+        'password',
+        'role',       // Custom: Admin, Customer, etc.
+        'otp_code',   // Custom: Stores the temporary OTP
+        'otp_expiry', // Custom: Stores OTP expiration time
+        'is_active',  // Custom: To ban/activate users
+    ];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -47,6 +47,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'otp_expiry' => 'datetime', // OPTIONAL: Casts this to a Carbon object automatically
+            'is_active' => 'boolean',   // OPTIONAL: Casts this to true/false automatically
         ];
     }
 }

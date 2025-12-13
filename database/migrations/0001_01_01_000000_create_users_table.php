@@ -13,10 +13,23 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            
+            // Default Laravel Name (Optional, so we make it nullable)
+            $table->string('name')->nullable();
+            
+            // --- CUSTOM FIELDS FOR SJM LOGIN ---
+            $table->string('username')->unique(); // <--- Critical for your login
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // Role & Security Fields
+            $table->string('role')->default('Customer'); // Admin, Manager, Supplier, Customer
+            $table->string('otp_code')->nullable();      // Stores 6-digit OTP
+            $table->timestamp('otp_expiry')->nullable(); // OTP Expiration Time
+            $table->boolean('is_active')->default(true); // Ban/Activate User
+            // -----------------------------------
+
             $table->rememberToken();
             $table->timestamps();
         });
