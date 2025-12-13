@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\CustomOrder;
+// --- THIS LINE WAS MISSING ---
+use App\Models\CustomOrder; 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Notifications\OrderStatusUpdated; 
 
 class CustomOrderController extends Controller
 {
@@ -39,7 +41,7 @@ class CustomOrderController extends Controller
             'status' => 'pending'
         ]);
 
-        return redirect()->route('custom.index')->with('success', 'Order submitted successfully!');
+        return redirect()->route('custom.index')->with('success', 'Order submitted successfully! We will review it shortly.');
     }
 
     // --- 1.3 Order Tracking List (My Orders) ---
@@ -59,7 +61,7 @@ class CustomOrderController extends Controller
     // --- 1.2 Manager Approval List ---
     public function managerIndex() {
         if (Auth::user()->role !== 'Admin' && Auth::user()->role !== 'Manager') { 
-            abort(403); 
+            abort(403, 'Unauthorized access.'); 
         }
         
         $pendingOrders = CustomOrder::where('status', 'pending')->with('user')->get();
@@ -69,7 +71,7 @@ class CustomOrderController extends Controller
     // --- 1.2 Manager Action (Approve/Reject) ---
     public function approve(Request $request, $id) {
         if (Auth::user()->role !== 'Admin' && Auth::user()->role !== 'Manager') { 
-            abort(403); 
+            abort(403, 'Unauthorized access.'); 
         }
 
         $order = CustomOrder::findOrFail($id);
@@ -87,6 +89,12 @@ class CustomOrderController extends Controller
         }
         
         $order->save();
+
+        try {
+            $order->user->notify(new OrderStatusUpdated($order));
+        } catch (\Exception $e) {
+            \Log::error("Notification Error: " . $e->getMessage());
+        }
 
         return back()->with('success', "Order #{$id} has been " . ucfirst($request->decision) . ".");
     }
