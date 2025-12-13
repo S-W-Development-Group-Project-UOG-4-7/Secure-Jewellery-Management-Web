@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-// --- THESE 2 LINES FIX THE RED ERRORS ---
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomOrderController;
 
@@ -17,30 +16,24 @@ Route::prefix('api/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// 3. Protected Routes
+// 3. Protected Routes (Require Login)
 Route::middleware(['auth'])->group(function () {
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    // Admin Dashboard
+    // --- DASHBOARDS ---
+
+    // Admin Dashboard (Points to your new View file)
     Route::get('/admin/dashboard', function() {
-        return "<div style='padding:50px; font-family:sans-serif;'>
-                    <h1>Admin Dashboard</h1>
-                    <p>Welcome, " . auth()->user()->username . "</p>
-                    <hr>
-                    <p><a href='".route('manager.approvals')."'>Manage Approvals</a></p>
-                    <form method='POST' action='".route('logout')."'>
-                        ".csrf_field()."
-                        <button type='submit' style='color:red; cursor:pointer;'>Logout</button>
-                    </form>
-                </div>";
+        return view('admin.dashboard');
     })->name('admin.dashboard');
 
-    // Customer Studio
+    // Customer Studio (Redirects to Order Creation)
     Route::get('/customer/studio', function() {
         return redirect()->route('custom.create');
     })->name('customer.studio');
+
 
     // --- FEATURE 1.1: CUSTOM ORDER UI ---
     Route::get('/custom-order/create', [CustomOrderController::class, 'create'])->name('custom.create');
