@@ -8,6 +8,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Manrope:wght@300;500;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" />
 
@@ -27,7 +28,7 @@
     <style>
         body { background-color: #000; overflow-x: hidden; cursor: none; }
         
-        /* VIDEO CONTAINER */
+        /* VIDEO ENGINE */
         .video-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -50; background: #000; }
         .bg-video {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -36,19 +37,17 @@
         }
         .bg-video.active { opacity: 1; }
 
-        /* Cursor */
+        /* CUSTOM CURSOR */
         .cursor-dot { position: fixed; width: 8px; height: 8px; background: #D4AF37; border-radius: 50%; z-index: 9999; pointer-events: none; }
         .cursor-outline { position: fixed; width: 40px; height: 40px; border: 1px solid #D4AF37; border-radius: 50%; z-index: 9999; pointer-events: none; transition: 0.15s; }
-        
-        .glass-panel { background: rgba(10, 10, 10, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
 <body class="font-sans text-white antialiased">
 
-    <div id="debug-box" class="fixed top-0 left-0 bg-red-600 text-white p-4 z-[99999] hidden font-mono text-xs">
+    <div id="debug-box" class="fixed top-0 left-0 bg-red-600 text-white p-4 z-50 hidden font-mono text-xs">
         <p class="font-bold">VIDEO LOAD ERROR:</p>
         <p id="debug-url"></p>
-        <p>Ensure file is at: public/assets/v1.mp4</p>
+        <p>Ensure files are in: public/assets/v1.mp4</p>
     </div>
 
     <div class="cursor-dot"></div>
@@ -108,7 +107,7 @@
                 <input type="text" id="otpInput" maxlength="6" placeholder="______" class="input input-lg w-full bg-black border-gray-700 text-center text-3xl tracking-[0.5em] text-white focus:border-gold rounded-none mb-6" />
                 <button onclick="verifyOtp()" class="btn w-full bg-white hover:bg-gold text-black border-none rounded-none font-bold">LOGIN</button>
             </div>
-            <p id="loginError" class="text-center text-red-500 text-xs font-mono mt-4 min-h-[20px]"></p>
+            <p id="loginError" class="text-center text-red-500 text-xs font-mono mt-4 min-h-5"></p>
         </div>
     </dialog>
 
@@ -120,7 +119,7 @@
             <input type="email" id="regEmail" placeholder="Email" class="input input-bordered w-full bg-black border-gray-700 mb-4 text-white rounded-none" />
             <input type="password" id="regPass" placeholder="Password" class="input input-bordered w-full bg-black border-gray-700 mb-6 text-white rounded-none" />
             <button id="regBtn" class="btn w-full bg-white hover:bg-gold text-black border-none rounded-none font-bold">SUBMIT</button>
-            <p id="regError" class="text-center text-red-500 text-xs font-mono mt-4"></p>
+            <p id="regError" class="text-center text-red-500 text-xs font-mono mt-4 min-h-5"></p>
         </div>
     </dialog>
 
@@ -129,30 +128,29 @@
         const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         let currentUser = "";
 
-        // --- VIDEO & CURSOR ---
         window.onload = () => {
-            // 1. Video Check
-            const v1 = document.getElementById('vid1');
-            
-            // Check if video loaded successfully
-            v1.onerror = function() {
-                document.getElementById('debug-box').classList.remove('hidden');
-                document.getElementById('debug-url').innerText = "Attempted URL: " + v1.currentSrc;
-            };
-
-            // Force Play
+            // 1. Video Engine
             const videos = document.querySelectorAll('.bg-video');
-            let current = 0;
-            videos.forEach(v => v.play().catch(e => console.log("Autoplay blocked"))); 
+            if(videos.length > 0) {
+                // Check for errors
+                videos[0].onerror = () => {
+                    document.getElementById('debug-box').classList.remove('hidden');
+                    document.getElementById('debug-url').innerText = "Failed: " + videos[0].currentSrc;
+                };
 
-            setInterval(() => {
-                const next = (current + 1) % videos.length;
-                videos[next].play().then(() => {
-                    videos[current].classList.remove('active');
-                    videos[next].classList.add('active');
-                    current = next;
-                });
-            }, 7000);
+                // Play Loop
+                let current = 0;
+                videos[0].play().catch(e => console.log("Autoplay blocked"));
+                
+                setInterval(() => {
+                    const next = (current + 1) % videos.length;
+                    videos[next].play().then(() => {
+                        videos[current].classList.remove('active');
+                        videos[next].classList.add('active');
+                        current = next;
+                    });
+                }, 7000);
+            }
 
             // 2. Cursor
             const dot = document.querySelector(".cursor-dot");
@@ -189,7 +187,11 @@
                     msg.innerText = data.message;
                     btn.innerHTML = 'VERIFY'; btn.disabled = false;
                 }
-            } catch(e) { msg.innerText = "Connection Failed"; btn.innerHTML = 'VERIFY'; btn.disabled = false; }
+            } catch(e) { 
+                msg.innerText = "Connection Failed"; 
+                btn.innerHTML = 'VERIFY'; 
+                btn.disabled = false; 
+            }
         });
 
         async function verifyOtp() {
