@@ -1,498 +1,507 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SJM | Secure Jewellery Management System</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>SJM | Secure Jewellery Management</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* --- 1. LUXURY THEME VARIABLES --- */
-        :root {
-            --gold-primary: #d4af37;
-            --gold-light: #f9e5b9;
-            --bg-dark: #050505;
-            --panel-dark: #121212;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --glass-bg: rgba(18, 18, 18, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
 
-        /* --- 2. PRELOADER --- */
-        #preloader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-            flex-direction: column;
-            transition: opacity 0.8s ease;
-        }
-        .loader-logo {
-            font-family: 'Playfair Display', serif; font-size: 3rem; 
-            color: var(--gold-primary); margin-bottom: 20px; animation: pulse 2s infinite;
-        }
-        .loader-bar { width: 150px; height: 2px; background: #333; position: relative; overflow: hidden; }
-        .loader-progress {
-            position: absolute; left: 0; top: 0; height: 100%; width: 0%;
-            background: var(--gold-primary); animation: load 2s ease-out forwards;
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
         }
 
-        /* --- 3. INFINITE VIDEO BACKGROUND --- */
-        .video-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            z-index: -2; overflow: hidden; background: #000;
-        }
-        
-        .bg-video {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; opacity: 0; transition: opacity 2s ease-in-out;
-            transform: scale(1.1); filter: brightness(0.5);
-        }
-        
-        /* Visible State */
-        .bg-video.active { opacity: 1; }
-
-        .video-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, var(--bg-dark) 90%);
-            z-index: -1; pointer-events: none;
+        .video-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
         }
 
-        /* --- 4. NAVIGATION --- */
+        #bg-video-1 { opacity: 0.15; z-index: 1; }
+        #bg-video-2 { opacity: 0.12; z-index: 2; }
+        #bg-video-3 { opacity: 0.10; z-index: 3; }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+            z-index: 4;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 5;
+        }
+
         .navbar {
-            position: fixed; top: 0; left: 0; width: 100%; padding: 20px 40px;
-            display: flex; justify-content: space-between; align-items: center;
-            z-index: 100; transition: 0.4s var(--ease-out);
-        }
-        .navbar.scrolled {
-            background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(15px);
-            padding: 15px 40px; border-bottom: 1px solid var(--glass-border);
-        }
-
-        .brand-group { display: flex; align-items: center; gap: 15px; }
-        .brand-logo {
-            font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700;
-            color: var(--gold-primary); text-decoration: none; letter-spacing: 1px;
-        }
-        
-        .system-status {
-            display: flex; gap: 15px; font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem; color: var(--text-muted);
-            border-left: 1px solid #333; padding-left: 15px;
-        }
-        .status-item { display: flex; align-items: center; gap: 6px; }
-        .status-item i { color: var(--gold-primary); font-size: 0.8rem; }
-
-        .nav-center { display: flex; gap: 30px; }
-        .nav-link {
-            color: var(--text-main); text-decoration: none; font-size: 0.9rem; font-weight: 500;
-            position: relative; opacity: 0.8; transition: 0.3s;
-        }
-        .nav-link:hover { opacity: 1; color: var(--gold-primary); }
-
-        .nav-right { display: flex; gap: 15px; align-items: center; }
-        .btn-nav {
-            padding: 10px 25px; border: 1px solid var(--glass-border);
-            border-radius: 50px; background: rgba(255,255,255,0.05); color: #fff;
-            font-size: 0.85rem; cursor: pointer; transition: 0.3s; backdrop-filter: blur(5px);
-        }
-        .btn-nav.primary { background: var(--gold-primary); color: #000; border-color: var(--gold-primary); font-weight: 600; }
-        .btn-nav:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-
-        /* --- 5. HERO SECTION --- */
-        .hero {
-            height: 100vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            padding: 0 20px; position: relative;
-        }
-        
-        .hero-label {
-            font-family: 'JetBrains Mono', monospace; color: var(--gold-primary);
-            font-size: 0.8rem; margin-bottom: 20px; letter-spacing: 2px;
-            opacity: 0; animation: fadeUp 1s 2.2s forwards;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
         }
 
-        .hero h1 {
-            font-family: 'Playfair Display', serif; font-size: clamp(3.5rem, 8vw, 6.5rem);
-            line-height: 1.1; margin-bottom: 25px;
-            background: linear-gradient(135deg, #fff 30%, var(--gold-primary) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            opacity: 0; animation: fadeUp 1s 2.4s forwards;
-        }
-
-        .hero p {
-            font-size: 1.1rem; color: #ccc; max-width: 650px; margin-bottom: 40px;
-            font-weight: 300; line-height: 1.6; opacity: 0; animation: fadeUp 1s 2.6s forwards;
-        }
-
-        /* --- 6. FEATURES GRID --- */
-        .features { padding: 120px 8%; background: var(--bg-dark); position: relative; z-index: 2; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-
-        .card {
-            background: var(--panel-dark); border-radius: 12px; padding: 40px;
-            border: 1px solid var(--glass-border); position: relative; transition: transform 0.3s;
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+            color: #0a0a0a;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+            border: none;
             cursor: pointer;
         }
-        .card:hover { border-color: rgba(212, 175, 55, 0.3); transform: translateY(-5px); }
-        
-        .icon-box {
-            width: 50px; height: 50px; background: rgba(212, 175, 55, 0.1);
-            border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            color: var(--gold-primary); font-size: 1.2rem; margin-bottom: 25px;
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(212, 175, 55, 0.5);
         }
-        .card h3 { font-family: 'Playfair Display'; font-size: 1.4rem; margin-bottom: 10px; color: #fff; }
-        .card p { color: #888; font-size: 0.95rem; line-height: 1.6; }
 
-        /* --- 7. FOOTER --- */
-        footer { background: #000; padding: 60px 8%; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-between; align-items: flex-end; position: relative; z-index: 2; }
-        .footer-left h2 { color: var(--gold-primary); font-family: 'Playfair Display'; margin-bottom: 10px; }
-        .footer-left p { color: #555; font-size: 0.9rem; }
-        .footer-links a { color: #666; text-decoration: none; margin-left: 20px; font-size: 0.9rem; transition: 0.3s; }
-        .footer-links a:hover { color: #fff; }
+        .btn-outline-gold {
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            transition: all 0.3s ease;
+            background: transparent;
+            cursor: pointer;
+        }
 
-        /* --- 8. MODALS --- */
+        .btn-outline-gold:hover {
+            background: #d4af37;
+            color: #0a0a0a;
+        }
+
+        .glow-card {
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            transition: all 0.4s ease;
+        }
+
+        .glow-card:hover {
+            border-color: rgba(212, 175, 55, 0.6);
+            box-shadow: 0 8px 40px rgba(212, 175, 55, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .hero-text {
+            animation: fadeUp 1s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
         .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-            justify-content: center; align-items: center; backdrop-filter: blur(8px);
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+            overflow-y: auto;
         }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
         .modal-content {
-            width: 100%; max-width: 400px; padding: 40px; background: #161616;
-            border: 1px solid #333; border-radius: 12px; position: relative;
-            animation: slideUp 0.4s var(--ease-out);
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            animation: slideUp 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        .input-group { margin-bottom: 20px; }
-        .input-group label { display: block; color: #666; font-size: 0.8rem; margin-bottom: 8px; font-family: 'JetBrains Mono'; }
-        .input-group input {
-            width: 100%; padding: 14px; background: #0a0a0a; border: 1px solid #222;
-            color: #fff; border-radius: 6px; outline: none; transition: 0.3s;
-        }
-        .input-group input:focus { border-color: var(--gold-primary); }
-        .btn-full {
-            width: 100%; padding: 14px; background: var(--gold-primary);
-            border: none; border-radius: 6px; font-weight: 600; cursor: pointer;
-        }
-        .close-btn { position: absolute; top: 20px; right: 20px; color: #fff; cursor: pointer; font-size: 1.2rem; }
 
-        /* Mobile Menu */
-        .menu-toggle { display: none; font-size: 1.5rem; color: #fff; cursor: pointer; }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .mobile-menu {
-            position: fixed; top: 0; right: -100%; width: 300px; height: 100%;
-            background: #111; z-index: 99; padding: 100px 40px;
-            transition: 0.4s ease; border-left: 1px solid #222;
+            display: none;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
         }
-        .mobile-menu.active { right: 0; }
-        .mobile-menu a { display: block; color: #fff; text-decoration: none; font-size: 1.2rem; margin-bottom: 20px; }
 
-        /* ANIMATIONS */
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        .mobile-menu.active {
+            display: block;
+        }
 
-        /* RESPONSIVE */
-        @media (max-width: 900px) {
-            .nav-center, .nav-right { display: none; }
-            .menu-toggle { display: block; }
-            .system-status { display: none; }
+        .input-field {
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: #ffffff;
+            transition: all 0.3s ease;
+            padding: 12px 18px;
+            border-radius: 6px;
+            width: 100%;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #d4af37;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
         }
     </style>
 </head>
 <body>
-
-    <div id="preloader">
-        <div class="loader-logo">SJM</div>
-        <div class="loader-bar"><div class="loader-progress"></div></div>
-    </div>
-
-    <div class="video-container">
-        <video autoplay muted loop playsinline class="bg-video active" id="vid1">
-            <source src="{{ asset('assets/v1.mp4') }}" type="video/mp4">
+    <div class="video-background">
+        <video id="bg-video-1" class="video-layer" autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/video/2021/03/27/69098-531024197_large.mp4" type="video/mp4">
         </video>
-        <video autoplay muted loop playsinline class="bg-video" id="vid2">
-            <source src="{{ asset('assets/v2.mp4') }}" type="video/mp4">
+        <video id="bg-video-2" class="video-layer" autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/video/2020/01/08/31055-383967820_large.mp4" type="video/mp4">
         </video>
-        <video autoplay muted loop playsinline class="bg-video" id="vid3">
-            <source src="{{ asset('assets/v3.mp4') }}" type="video/mp4">
+        <video id="bg-video-3" class="video-layer" autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/video/2022/06/23/121493-724736834_large.mp4" type="video/mp4">
         </video>
-        <div class="video-overlay"></div>
     </div>
+    <div class="overlay"></div>
 
-    <nav class="navbar" id="navbar">
-        <div class="brand-group">
-            <a href="#" class="brand-logo">SJM.</a>
-            <div class="system-status">
-                <div class="status-item"><i class="fa-regular fa-clock"></i> <span id="liveTime">00:00:00</span></div>
-                <div class="status-item"><i class="fa-solid fa-location-dot"></i> <span id="liveLoc">System Node</span></div>
+    <div class="content-wrapper">
+        <nav class="navbar">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="text-2xl font-bold gold-gradient-text">SJM</div>
+
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a href="#home" class="text-gray-300 hover:text-[#d4af37] transition">Home</a>
+                        <a href="#features" class="text-gray-300 hover:text-[#d4af37] transition">Features</a>
+                        <a href="#security" class="text-gray-300 hover:text-[#d4af37] transition">Security</a>
+                        <button onclick="openLoginModal()" class="btn-outline-gold px-6 py-2 rounded-lg">Login</button>
+                        <button onclick="openRegisterModal()" class="btn-gold px-6 py-2 rounded-lg">Register</button>
+                    </div>
+
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-[#d4af37]">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+
+                <div id="mobileMenu" class="mobile-menu mt-4">
+                    <div class="flex flex-col space-y-4 py-4">
+                        <a href="#home" class="text-gray-300 hover:text-[#d4af37] transition">Home</a>
+                        <a href="#features" class="text-gray-300 hover:text-[#d4af37] transition">Features</a>
+                        <a href="#security" class="text-gray-300 hover:text-[#d4af37] transition">Security</a>
+                        <button onclick="openLoginModal()" class="btn-outline-gold px-6 py-2 rounded-lg text-left">Login</button>
+                        <button onclick="openRegisterModal()" class="btn-gold px-6 py-2 rounded-lg text-center">Register</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div class="nav-center">
-            <a href="#features" class="nav-link">Features</a>
-            <a href="{{ route('design.studio') }}" class="nav-link" style="color:var(--gold-primary)">Design Studio</a>
-            <a href="#security" class="nav-link">Security</a>
-        </div>
-        
-        <div class="nav-right">
-            <button class="btn-nav" onclick="openModal('loginModal')">Login</button>
-            <button class="btn-nav primary" onclick="openModal('registerModal')">Get Access</button>
-        </div>
+        </nav>
 
-        <div class="menu-toggle" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></div>
-    </nav>
+        <section id="home" class="min-h-screen flex items-center justify-center pt-20 px-6">
+            <div class="text-center hero-text max-w-5xl">
+                <div class="inline-block px-4 py-2 rounded-full border border-[#d4af37] mb-6">
+                    <span class="text-[#d4af37] text-sm font-semibold">SYSTEM V2.5 ONLINE</span>
+                </div>
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                    <span class="gold-gradient-text">Secure Assets.</span><br>
+                    <span class="text-white">Design Futures.</span>
+                </h1>
+                <p class="text-gray-300 text-lg md:text-xl mb-10 max-w-3xl mx-auto leading-relaxed">
+                    A military-grade ecosystem for jewellery management. Verify locker integrity, track live inventory, and create bespoke pieces with our AI Design Engine.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="openLoginModal()" class="btn-gold px-8 py-4 rounded-lg text-lg">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Enter Portal
+                    </button>
+                    <button onclick="openRegisterModal()" class="btn-outline-gold px-8 py-4 rounded-lg text-lg">
+                        <i class="fas fa-user-plus mr-2"></i>Create Account
+                    </button>
+                    <button onclick="alert('Demo request sent! Our team will contact you shortly.')" class="btn-outline-gold px-8 py-4 rounded-lg text-lg">
+                        <i class="fas fa-play mr-2"></i>Request Demo
+                    </button>
+                </div>
+            </div>
+        </section>
 
-    <div class="mobile-menu" id="mobileMenu">
-        <a href="#" onclick="toggleMobileMenu()">Home</a>
-        <a href="#features" onclick="toggleMobileMenu()">Features</a>
-        <a href="{{ route('design.studio') }}">Design Studio</a>
-        <a href="#" onclick="openModal('loginModal')">Login</a>
-        <a href="#" onclick="openModal('registerModal')">Register</a>
+        <section id="features" class="py-20 px-6">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                        <span class="gold-gradient-text">Powerful Features</span>
+                    </h2>
+                    <p class="text-gray-400 text-lg">Enterprise-grade tools for modern jewellery management</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="glow-card p-8 rounded-2xl">
+                        <div class="text-[#d4af37] text-4xl mb-4">
+                            <i class="fa-solid fa-truck-fast"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Smart Logistics</h3>
+                        <p class="text-gray-400">Supplier reliability scoring based on delivery speed and accuracy. Digital invoice processing and dispute resolution.</p>
+                    </div>
+
+                    <div class="glow-card p-8 rounded-2xl">
+                        <div class="text-[#d4af37] text-4xl mb-4">
+                            <i class="fa-solid fa-gem"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Inventory AI</h3>
+                        <p class="text-gray-400">Granular tracking of carat weight, metal purity, and depreciation. Automated low-stock alerts and valuation reports.</p>
+                    </div>
+
+                    <div class="glow-card p-8 rounded-2xl">
+                        <div class="text-[#d4af37] text-4xl mb-4">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white">Locker Verification</h3>
+                        <p class="text-gray-400">Visual proof-of-storage protocols. Require before/after photographic evidence for every secure vault interaction.</p>
+                    </div>
+
+                    <div class="glow-card p-8 rounded-2xl">
+                        <div class="text-[#d4af37] text-4xl mb-4">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3 text-white">AI Custom Studio</h3>
+                        <p class="text-gray-400">Empower clients to generate unique jewellery concepts instantly. AI engine visualizes custom cuts, settings, and metals in real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="security" class="py-20 px-6">
+            <div class="container mx-auto max-w-4xl text-center">
+                <h2 class="text-4xl md:text-5xl font-bold mb-6">
+                    <span class="gold-gradient-text">Military-Grade Security</span>
+                </h2>
+                <p class="text-gray-300 text-lg mb-10 leading-relaxed">
+                    Your assets are protected with bank-level encryption, biometric authentication, and real-time threat monitoring. Every transaction is logged and verified across multiple secure nodes. 2-factor OTP authentication ensures maximum security.
+                </p>
+                <button onclick="openRegisterModal()" class="btn-gold px-8 py-4 rounded-lg text-lg inline-block">
+                    <i class="fas fa-shield-halved mr-2"></i>Experience Security
+                </button>
+            </div>
+        </section>
+
+        <footer class="py-10 px-6 border-t border-[#d4af37]/20">
+            <div class="container mx-auto max-w-6xl">
+                <div class="text-center">
+                    <p class="text-gray-400 mb-2">
+                        Developed by <span class="text-[#d4af37] font-semibold">K. M. Nethmi Sanjalee</span>
+                    </p>
+                    <p class="text-gray-500 text-sm">
+                        Authentication System + Customer Management Module
+                    </p>
+                    <p class="text-gray-600 text-xs mt-4">
+                        &copy; 2024 SJM - Secure Jewellery Management. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </footer>
     </div>
-
-    <section class="hero">
-        <div class="hero-label">SYSTEM V2.5 ONLINE</div>
-        <h1>Secure Assets.<br>Design Futures.</h1>
-        <p>A military-grade ecosystem for jewellery management. Verify locker integrity, track live inventory, and <strong>create bespoke pieces with our AI Design Engine.</strong></p>
-        
-        <div class="hero-btns" style="opacity: 0; animation: fadeUp 1s 2.8s forwards; display: flex; gap: 20px;">
-            <button class="btn-nav primary" style="padding: 15px 40px; font-size: 1rem;" onclick="openModal('loginModal')">Enter Portal</button>
-            <button class="btn-nav" style="padding: 15px 40px; font-size: 1rem;" onclick="openModal('registerModal')">Request Demo</button>
-        </div>
-    </section>
-
-    <section class="features" id="features">
-        <div style="text-align: center; margin-bottom: 60px;">
-            <span style="color:var(--gold-primary); font-family:'JetBrains Mono'; font-size:0.8rem;">ARCHITECTURE</span>
-            <h2 style="font-family:'Playfair Display'; font-size:3rem; margin-top:10px;">Core Modules</h2>
-        </div>
-        <div class="grid-container">
-            <div class="card" onclick="window.location.href='{{ route('design.studio') }}'">
-                <div class="card-content">
-                    <div class="icon-box"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                    <h3>AI Custom Studio</h3>
-                    <p><strong>New Feature:</strong> Empower clients to generate unique jewellery concepts instantly. Our AI engine visualizes custom cuts.</p>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <div class="icon-box"><i class="fa-solid fa-vault"></i></div>
-                    <h3>Locker Verification</h3>
-                    <p>Visual proof-of-storage protocols. Require before/after photographic evidence for every secure vault interaction.</p>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <div class="icon-box"><i class="fa-solid fa-gem"></i></div>
-                    <h3>Inventory AI</h3>
-                    <p>Granular tracking of carat weight, metal purity, and depreciation. Automated low-stock alerts.</p>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <div class="icon-box"><i class="fa-solid fa-truck-fast"></i></div>
-                    <h3>Smart Logistics</h3>
-                    <p>Supplier reliability scoring based on delivery speed and accuracy. Digital invoice processing.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <div class="footer-left">
-            <h2>SJM.</h2>
-            <p>Secure Jewellery Management Systems &copy; {{ date('Y') }}</p>
-        </div>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">System Status: Operational</a>
-        </div>
-    </footer>
 
     <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('loginModal')"><i class="fa-solid fa-xmark"></i></span>
-            <h2 style="text-align: left; margin-bottom: 10px;">Welcome Back</h2>
-            <form id="loginForm">
-                <div class="input-group"><label>ACCESS ID</label><input type="text" id="loginUsername" required></div>
-                <div class="input-group"><label>PASSPHRASE</label><input type="password" id="loginPassword" required></div>
-                <button type="submit" class="btn-full" id="loginBtn">INITIALIZE SESSION</button>
-                <div id="loginMsg" style="margin-top:15px; font-size:0.85rem; color:#ff5252;"></div>
+        <div class="modal-content rounded-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold gold-gradient-text">Welcome Back</h3>
+                <button onclick="closeLoginModal()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('login') }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Email Address</label>
+                    <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" name="password" class="input-field" placeholder="Enter your password" required>
+                </div>
+                <div class="mb-6">
+                    <label class="flex items-center text-gray-400">
+                        <input type="checkbox" name="remember" class="mr-2">
+                        <span>Remember Me</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-gold w-full py-3 rounded-lg text-lg">
+                    Continue to OTP
+                </button>
             </form>
+            <p class="text-center text-gray-500 text-sm mt-6">
+                Don't have an account? <button onclick="closeLoginModal(); openRegisterModal();" class="text-[#d4af37] hover:underline">Register here</button>
+            </p>
         </div>
     </div>
 
     <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('registerModal')"><i class="fa-solid fa-xmark"></i></span>
-            <h2 style="text-align: left; margin-bottom: 10px;">Request Access</h2>
-            <form id="registerForm">
-                <div class="input-group"><label>PREFERRED ID</label><input type="text" id="regUsername" required></div>
-                <div class="input-group"><label>EMAIL</label><input type="email" id="regEmail" required></div>
-                <div class="input-group"><label>PASSWORD</label><input type="password" id="regPassword" required></div>
-                <button type="submit" class="btn-full">SUBMIT APPLICATION</button>
-                <div id="regMsg" style="margin-top:15px; font-size:0.85rem; color:#ff5252;"></div>
+        <div class="modal-content rounded-2xl p-8 max-w-lg w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold gold-gradient-text">Create Account</h3>
+                <button onclick="closeRegisterModal()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('register') }}" method="POST" id="registerFormModal">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Full Name</label>
+                    <input type="text" name="name" class="input-field" placeholder="Enter your full name" required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-400 mb-2">Email</label>
+                        <input type="email" name="email" class="input-field" placeholder="Enter your email" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-2">Phone</label>
+                        <input type="text" name="phone" class="input-field" placeholder="Enter your phone" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Account Type</label>
+                    <select name="role" class="input-field">
+                        <option value="customer">Customer</option>
+                        <option value="supplier">Supplier</option>
+                        <option value="delivery">Delivery Personnel</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" name="password" id="regPassword" class="input-field" placeholder="Min. 8 characters" required minlength="8">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-400 mb-2">Confirm Password</label>
+                    <input type="password" name="password_confirmation" id="regPasswordConfirm" class="input-field" placeholder="Confirm your password" required minlength="8">
+                    <small id="regPasswordMatch" class="block mt-2"></small>
+                </div>
+                <button type="submit" class="btn-gold w-full py-3 rounded-lg text-lg">
+                    Register & Verify OTP
+                </button>
             </form>
+            <p class="text-center text-gray-500 text-sm mt-6">
+                Already have an account? <button onclick="closeRegisterModal(); openLoginModal();" class="text-[#d4af37] hover:underline">Login here</button>
+            </p>
         </div>
     </div>
 
     <script>
-        // 1. PRELOADER & SEAMLESS VIDEO LOOP
-        window.onload = () => {
-            setTimeout(() => {
-                const preloader = document.getElementById('preloader');
-                preloader.style.opacity = '0';
-                setTimeout(() => preloader.style.display = 'none', 800);
-                startVideoRotation();
-            }, 1000);
-        };
-
-        function startVideoRotation() {
-            const videos = document.querySelectorAll('.bg-video');
-            if(videos.length === 0) return;
-            
-            let current = 0;
-            
-            // Force play all to bypass some browser restrictions
-            videos.forEach(v => {
-                v.play().catch(e => console.log("Auto-play inhibited:", e));
-            });
-
-            setInterval(() => {
-                videos[current].classList.remove('active');
-                current = (current + 1) % videos.length;
-                videos[current].classList.add('active');
-                videos[current].play(); 
-            }, 8000);
-        }
-
-        // 2. TIME & LOCATION
-        function updateTime() {
-            document.getElementById('liveTime').innerText = new Date().toLocaleTimeString('en-US', {hour12: false});
-            try {
-                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                document.getElementById('liveLoc').innerText = tz.split('/')[1].replace('_', ' ').toUpperCase();
-            } catch(e) {}
-        }
-        setInterval(updateTime, 1000); updateTime();
-
-        // 3. UI LOGIC
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        window.onclick = (e) => { if(e.target.classList.contains('modal')) e.target.style.display='none'; };
-        
         function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('active');
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('active');
         }
 
-        // 4. SCROLL EFFECT
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if(window.scrollY > 50) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
-        });
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('mobileMenu').classList.remove('active');
+        }
 
-        // 5. AUTH HANDLERS
-        
-        // --- LOGIN LOGIC ---
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('loginBtn');
-            const msg = document.getElementById('loginMsg');
-            
-            btn.innerHTML = 'VERIFYING...';
-            btn.style.opacity = '0.7';
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+        }
 
-            const data = {
-                username: document.getElementById('loginUsername').value,
-                password: document.getElementById('loginPassword').value
-            };
+        function openRegisterModal() {
+            document.getElementById('registerModal').classList.add('active');
+            document.getElementById('mobileMenu').classList.remove('active');
+        }
 
-            try {
-                const res = await fetch("{{ route('login.submit') }}", {
-                    method: 'POST', 
-                    body: JSON.stringify(data), 
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                });
-                const result = await res.json();
-                
-                if (result.status === 'success') {
-                    msg.style.color = '#4caf50';
-                    msg.innerText = 'ACCESS GRANTED.';
-                    setTimeout(() => window.location.href = result.redirect, 1000);
-                } else {
-                    msg.style.color = '#ff5252';
-                    msg.innerText = result.message || 'ACCESS DENIED';
-                    btn.innerHTML = 'INITIALIZE SESSION';
-                    btn.style.opacity = '1';
-                }
-            } catch (err) {
-                console.error(err);
-                msg.innerText = "System Connection Error";
-                btn.innerHTML = 'INITIALIZE SESSION';
-                btn.style.opacity = '1';
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+        }
+
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLoginModal();
             }
         });
 
-        // --- REGISTER LOGIC (UPDATED) ---
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const msg = document.getElementById('regMsg');
-            
-            btn.innerHTML = 'PROCESSING...';
-            
-            // Map the form inputs to what the AuthController expects
-            const data = {
-                username: document.getElementById('regUsername').value,
-                email: document.getElementById('regEmail').value,
-                password: document.getElementById('regPassword').value
-            };
-
-            try {
-                const res = await fetch("{{ route('register.submit') }}", {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                });
-                
-                const result = await res.json();
-
-                if (result.status === 'success') {
-                     msg.style.color = '#4caf50';
-                     msg.innerText = 'ID ASSIGNED. REDIRECTING...';
-                     setTimeout(() => window.location.href = result.redirect, 1500);
-                } else {
-                     // If validation fails
-                     msg.style.color = '#ff5252';
-                     msg.innerText = result.message || 'Registration Failed.';
-                }
-            } catch (err) {
-                msg.innerText = "Registration Error";
-                console.error(err);
+        document.getElementById('registerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRegisterModal();
             }
-            
-            btn.innerHTML = 'SUBMIT APPLICATION';
+        });
+
+        const regPassword = document.getElementById('regPassword');
+        const regPasswordConfirm = document.getElementById('regPasswordConfirm');
+        const regPasswordMatch = document.getElementById('regPasswordMatch');
+
+        function checkPasswordMatch() {
+            if (regPasswordConfirm.value === '') {
+                regPasswordMatch.textContent = '';
+                return;
+            }
+
+            if (regPassword.value === regPasswordConfirm.value) {
+                regPasswordMatch.textContent = 'Passwords match';
+                regPasswordMatch.style.color = '#9fff9f';
+            } else {
+                regPasswordMatch.textContent = 'Passwords do not match';
+                regPasswordMatch.style.color = '#ff9f9f';
+            }
+        }
+
+        if (regPassword && regPasswordConfirm) {
+            regPassword.addEventListener('input', checkPasswordMatch);
+            regPasswordConfirm.addEventListener('input', checkPasswordMatch);
+        }
+
+        document.getElementById('registerFormModal').addEventListener('submit', function(e) {
+            if (regPassword.value !== regPasswordConfirm.value) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
         });
     </script>
 </body>
