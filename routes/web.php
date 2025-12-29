@@ -2,49 +2,95 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CustomOrderController;
+use App\Http\Controllers\DesignStudioController;
 
-// 1. Public Homepage
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 })->name('home');
 
-// 2. Authentication API
-Route::prefix('api/auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'loginStep1']);
-    Route::post('/otp', [AuthController::class, 'verifyOtp']);
-    Route::post('/register', [AuthController::class, 'register']);
+// Updated: Ensure these views exist in resources/views/ or resources/views/auth/
+Route::get('/login', function () {
+    return view('login'); // Make sure file is at resources/views/login.blade.php
+})->name('login');
+
+Route::get('/register', function () {
+    return view('register'); // Make sure file is at resources/views/register.blade.php
+})->name('register');
+
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Logic
+|--------------------------------------------------------------------------
+*/
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('otp.verify');
+Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
+/*
+|--------------------------------------------------------------------------
+| CUSTOMER ROUTES (Default Role = customer)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:customer'])->group(function () {
+
+    // ✅ FIX: This points to the Controller, which loads the $history data
+    Route::get('/design-studio', [DesignStudioController::class, 'index'])
+        ->name('design.studio');
+
+    // ✅ AI Design Generator
+    Route::post('/design-studio/generate', [DesignStudioController::class, 'generate'])
+        ->name('design.generate');
 });
 
-// 3. Protected Routes (Require Login)
-Route::middleware(['auth'])->group(function () {
 
-    // Logout
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
 
-    // --- DASHBOARDS ---
-
-    // Admin Dashboard (Points to your new View file)
-    Route::get('/admin/dashboard', function() {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
-
-    // Customer Studio (Redirects to Order Creation)
-    Route::get('/customer/studio', function() {
-        return redirect()->route('custom.create');
-    })->name('customer.studio');
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
+});
 
 
-    // --- FEATURE 1.1: CUSTOM ORDER UI ---
-    Route::get('/custom-order/create', [CustomOrderController::class, 'create'])->name('custom.create');
-    Route::post('/custom-order/store', [CustomOrderController::class, 'store'])->name('custom.store');
+/*
+|--------------------------------------------------------------------------
+| MANAGER ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:manager'])
+    ->prefix('manager')
+    ->group(function () {
 
-    // --- FEATURE 1.3: ORDER TRACKING UI ---
-    Route::get('/my-orders', [CustomOrderController::class, 'index'])->name('custom.index');
-    Route::get('/order/{id}', [CustomOrderController::class, 'show'])->name('custom.show');
+        Route::get('/dashboard', function () {
+            return view('manager.dashboard');
+        })->name('manager.dashboard');
+});
 
-    // --- FEATURE 1.2: MANAGER APPROVAL UI ---
-    Route::get('/manager/approvals', [CustomOrderController::class, 'managerIndex'])->name('manager.approvals');
-    Route::post('/manager/approve/{id}', [CustomOrderController::class, 'approve'])->name('manager.approve');
 
+/*
+|--------------------------------------------------------------------------
+| SUPPLIER ROUTES
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:supplier'])
+    ->prefix('supplier')
+    ->group(function () {
+
+        Route::get('/dashboard', function () {
+            return view('supplier.dashboard');
+        })->name('supplier.dashboard');
 });

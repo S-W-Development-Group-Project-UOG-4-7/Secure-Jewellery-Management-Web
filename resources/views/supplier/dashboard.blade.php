@@ -1,0 +1,1 @@
+<h1>Supplier Hub</h1><p>Logistics and Inventory.</p>
