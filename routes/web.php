@@ -3,6 +3,16 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomOrderController;
+use App\Http\Controllers\SystemLogController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application.
+|
+*/
 
 // 1. Public Homepage
 Route::get('/', function () {
@@ -24,16 +34,15 @@ Route::middleware(['auth'])->group(function () {
 
     // --- DASHBOARDS ---
 
-    // Admin Dashboard (Points to your new View file)
-    Route::get('/admin/dashboard', function() {
+    // Admin Dashboard
+    Route::get('/admin/dashboard', function () {
         return view('admin.dashboard');
     })->name('admin.dashboard');
 
     // Customer Studio (Redirects to Order Creation)
-    Route::get('/customer/studio', function() {
+    Route::get('/customer/studio', function () {
         return redirect()->route('custom.create');
     })->name('customer.studio');
-
 
     // --- FEATURE 1.1: CUSTOM ORDER UI ---
     Route::get('/custom-order/create', [CustomOrderController::class, 'create'])->name('custom.create');
@@ -47,4 +56,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/manager/approvals', [CustomOrderController::class, 'managerIndex'])->name('manager.approvals');
     Route::post('/manager/approve/{id}', [CustomOrderController::class, 'approve'])->name('manager.approve');
 
+    // --- FEATURE 2.0: SYSTEM LOGS ---
+    Route::get('/logs', [SystemLogController::class, 'index'])
+        ->name('logs.index');
 });
