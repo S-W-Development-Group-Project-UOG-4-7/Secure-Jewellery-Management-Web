@@ -2,127 +2,155 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\OtpLog;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\OtpLoginMail;
-use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    // STEP 1: Verify Password & Email OTP
+    public function showLogin()
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+        return view('auth.login');
+    }
+
     public function login(Request $request)
     {
         $request->validate([
-            'username' => 'required',
-            'password' => 'required'
+            'email' => 'required|email',
+            'password' => 'required|min:6',
         ]);
 
-        $user = User::where('username', $request->username)->first();
+        $user = User::where('email', $request->email)->first();
 
-        // Check if user exists and password is correct
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid Credentials']);
+            return back()->with('error', 'Invalid credentials');
         }
 
-        // Generate 6-digit Code
-        $otp = rand(100000, 999999);
-        $user->otp_code = $otp;
-        $user->otp_expires_at = Carbon::now()->addMinutes(5);
-        $user->save();
+        session(['otp_user_id' => $user->id]);
 
-        // Send Email via Gmail SMTP
-        try {
-            Mail::to($user->email)->send(new OtpLoginMail($otp));
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Email failed to send. Check SMTP settings.']);
-        }
+        $otp = $this->generateOtp($user);
 
-        return response()->json([
-            'status' => 'otp_required',
-            'username' => $user->username,
-            'message' => 'Verification code sent to email.'
-        ]);
+        return redirect()->route('otp.show')->with('success', 'OTP sent to your email');
     }
 
-    // STEP 2: Verify OTP & Login
+    public function showOtp()
+    {
+        if (!session('otp_user_id')) {
+            return redirect()->route('login');
+        }
+        return view('auth.otp');
+    }
+
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'username' => 'required',
-            'otp' => 'required|numeric'
+            'otp' => 'required|numeric|digits:6',
         ]);
 
-        $user = User::where('username', $request->username)->first();
-
-        // Validation Checks
-        if (!$user || $user->otp_code != $request->otp) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid Security Code']);
+        $userId = session('otp_user_id');
+        if (!$userId) {
+            return back()->with('error', 'Session expired. Please login again.');
         }
 
-        if (Carbon::now()->greaterThan($user->otp_expires_at)) {
-            return response()->json(['status' => 'error', 'message' => 'Code has expired. Login again.']);
+        $otpLog = OtpLog::where('user_id', $userId)
+            ->where('otp_code', $request->otp)
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if (!$otpLog) {
+            return back()->with('error', 'Invalid OTP');
         }
 
-        // Success: Clear OTP and Login
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
-        $user->save();
-
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        // --- ROLE BASED REDIRECTION ---
-        $redirectUrl = route('design.studio'); // Default for customer
-
-        switch ($user->role) {
-            case 'admin':
-                $redirectUrl = route('admin.dashboard');
-                break;
-            case 'manager':
-                $redirectUrl = route('manager.dashboard');
-                break;
-            case 'supplier':
-                $redirectUrl = route('supplier.dashboard');
-                break;
+        if ($otpLog->isExpired()) {
+            $otpLog->update(['status' => 'expired']);
+            return back()->with('error', 'OTP has expired');
         }
 
-        return response()->json([
-            'status' => 'success',
-            'redirect' => $redirectUrl
-        ]);
+        $otpLog->update(['status' => 'verified']);
+
+        Auth::loginUsingId($userId);
+        session()->forget('otp_user_id');
+
+        return redirect()->route('dashboard')->with('success', 'Login successful');
     }
 
-    // Register (No OTP needed for creation, but login will trigger it)
+    public function resendOtp()
+    {
+        $userId = session('otp_user_id');
+        if (!$userId) {
+            return back()->with('error', 'Session expired. Please login again.');
+        }
+
+        $user = User::find($userId);
+        $this->generateOtp($user);
+
+        return back()->with('success', 'New OTP sent to your email');
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+        session()->flush();
+        return redirect()->route('login')->with('success', 'Logged out successfully');
+    }
+
+    public function showRegister()
+    {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+        return view('auth.register');
+    }
+
     public function register(Request $request)
     {
         $request->validate([
-            'username' => 'required|unique:users,username',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'password' => 'required|min:8|confirmed',
+            'role' => 'nullable|in:admin,customer,supplier,delivery',
         ]);
 
-        User::create([
-            'name'     => $request->username,
-            'username' => $request->username,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password)
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => $request->role ?? 'customer',
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'redirect' => route('login')
-        ]);
+        session(['otp_user_id' => $user->id]);
+
+        $otp = $this->generateOtp($user);
+
+        return redirect()->route('otp.show')->with('success', 'Registration successful! OTP sent to your email');
     }
 
-    // Logout
-    public function logout(Request $request)
+    private function generateOtp($user)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect('/');
+        OtpLog::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'expired']);
+
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        OtpLog::create([
+            'user_id' => $user->id,
+            'otp_code' => $otp,
+            'expires_at' => now()->addMinutes(5),
+            'status' => 'pending',
+        ]);
+
+        \Log::info("OTP for {$user->email}: {$otp}");
+
+        return $otp;
     }
 }
