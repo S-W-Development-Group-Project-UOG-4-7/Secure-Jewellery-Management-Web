@@ -1,0 +1,298 @@
+================================================================================
+  SECURE JEWELLERY MANAGEMENT SYSTEM - QUICK START GUIDE
+================================================================================
+
+Developer: K. M. Nethmi Sanjalee
+Organization: ALL TECHNOLOGY
+Email: kokiladulshan021@gmail.com
+
+================================================================================
+  COMPLETED IMPLEMENTATION
+================================================================================
+
+✅ Database Migrations
+   - customers table
+   - otp_logs table
+   - All Laravel default tables (users, sessions, jobs, cache)
+
+✅ Models
+   - User model (default Laravel)
+   - Customer model
+   - OtpLog model with helper methods
+
+✅ Controllers
+   - AuthController (Login, OTP verification, Logout)
+   - CustomerController (Full CRUD operations)
+   - ProfileController (View, Edit, Change Password)
+   - DashboardController (Statistics and overview)
+
+✅ Routes
+   - Authentication routes (Login, OTP, Logout)
+   - Customer management routes (CRUD)
+   - Profile management routes
+   - Dashboard route
+
+✅ Views (All with Luxury Dark Theme)
+   - Main layout with video backgrounds
+   - Login page
+   - OTP verification page
+   - Dashboard with statistics
+   - Customer list with search and filter
+   - Customer add form
+   - Customer edit form
+   - Profile view
+   - Profile edit
+   - Change password
+
+✅ Features
+   - OTP-based authentication
+   - 5-minute OTP expiry with countdown
+   - Secure password hashing (Bcrypt)
+   - CSRF protection
+   - Input validation
+   - Search and filter functionality
+   - Pagination
+   - Real-time password matching
+   - Responsive design
+
+✅ Design
+   - Luxury dark theme (#1a1a1a background)
+   - Gold accents (#d4af37)
+   - Multiple video backgrounds (3 layers)
+   - Glassmorphism effects
+   - Smooth animations
+   - Professional typography (Segoe UI)
+
+✅ Frontend Assets
+   - Successfully built with Vite
+   - CSS compiled and optimized
+   - JavaScript bundled
+
+================================================================================
+  TO RUN THE APPLICATION
+================================================================================
+
+IMPORTANT: Make sure you have the following PHP extensions installed:
+- php-sqlite3
+- php-pdo
+- php-xml
+- php-dom
+- php-curl
+- php-mbstring
+
+1. Install PHP dependencies:
+   composer install
+
+2. Setup environment:
+   cp .env.example .env
+   php artisan key:generate
+
+3. Create SQLite database:
+   touch database/database.sqlite
+
+4. Run migrations and seed database:
+   php artisan migrate:fresh --seed
+
+5. Build frontend assets (ALREADY COMPLETED):
+   npm run build
+
+6. Start the server:
+   php artisan serve
+
+7. Open browser and navigate to:
+   http://localhost:8000
+
+8. Login with:
+   Email: admin@sjm.com
+   Password: password123
+
+9. Check OTP in Laravel logs:
+   tail -f storage/logs/laravel.log
+
+================================================================================
+  PROJECT STRUCTURE
+================================================================================
+
+app/
+├── Http/Controllers/
+│   ├── AuthController.php
+│   ├── CustomerController.php
+│   ├── DashboardController.php
+│   └── ProfileController.php
+├── Models/
+│   ├── Customer.php
+│   ├── OtpLog.php
+│   └── User.php
+
+database/
+├── migrations/
+│   ├── 2024_01_01_000003_create_customers_table.php
+│   └── 2024_01_01_000004_create_otp_logs_table.php
+└── seeders/
+    └── DatabaseSeeder.php (Creates admin user)
+
+resources/
+├── views/
+│   ├── layouts/
+│   │   └── app.blade.php (Main layout with theme)
+│   ├── auth/
+│   │   ├── login.blade.php
+│   │   └── otp.blade.php
+│   ├── customers/
+│   │   ├── index.blade.php
+│   │   ├── create.blade.php
+│   │   └── edit.blade.php
+│   ├── profile/
+│   │   ├── show.blade.php
+│   │   ├── edit.blade.php
+│   │   └── change-password.blade.php
+│   └── dashboard.blade.php
+├── css/
+│   └── app.css
+└── js/
+    ├── app.js
+    └── bootstrap.js
+
+routes/
+└── web.php (All application routes)
+
+public/
+└── build/ (Compiled assets - READY)
+
+================================================================================
+  SECURITY FEATURES IMPLEMENTED
+================================================================================
+
+1. Password Security
+   - Bcrypt hashing with 12 rounds
+   - Minimum 8 characters
+   - Password confirmation validation
+
+2. OTP Security
+   - 6-digit random code
+   - 5-minute expiry
+   - Single-use verification
+   - Status tracking (pending/verified/expired)
+   - Logged in database
+
+3. Session Security
+   - CSRF token protection on all forms
+   - Secure session handling
+   - Session timeout
+   - Proper logout functionality
+
+4. Input Validation
+   - Server-side validation
+   - Email format validation
+   - Phone number validation
+   - XSS protection
+   - SQL injection prevention
+
+================================================================================
+  THEME DETAILS
+================================================================================
+
+Colors:
+- Primary Gold: #d4af37
+- Background: #1a1a1a
+- Card Background: rgba(42, 42, 42, 0.85)
+- Text: #ffffff
+- Success: #9fff9f
+- Error: #ff9f9f
+
+Video Backgrounds (3 layers):
+1. Luxury jewellery showcase (opacity: 0.25)
+2. Gold texture animation (opacity: 0.20)
+3. Secure vault visual (opacity: 0.15)
+
+Typography:
+- Font: Segoe UI
+- Professional and readable
+
+Effects:
+- Glassmorphism with backdrop blur
+- Smooth transitions
+- Hover animations
+- Box shadows with gold glow
+
+================================================================================
+  API ENDPOINTS
+================================================================================
+
+Authentication:
+- GET  /login              - Show login page
+- POST /login              - Process login
+- GET  /otp                - Show OTP page
+- POST /otp/verify         - Verify OTP
+- POST /otp/resend         - Resend OTP
+- POST /logout             - Logout
+
+Dashboard:
+- GET  /dashboard          - Dashboard with stats
+
+Customers:
+- GET    /customers        - List customers
+- GET    /customers/create - Show create form
+- POST   /customers        - Store customer
+- GET    /customers/{id}/edit - Show edit form
+- PUT    /customers/{id}   - Update customer
+- DELETE /customers/{id}   - Delete customer
+
+Profile:
+- GET  /profile                     - View profile
+- GET  /profile/edit                - Show edit form
+- PUT  /profile                     - Update profile
+- GET  /profile/change-password     - Change password form
+- POST /profile/change-password     - Update password
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+If you encounter "could not find driver" error:
+- Install php-sqlite3 extension
+  Ubuntu/Debian: sudo apt-get install php-sqlite3
+  macOS: Already included with PHP
+
+If you encounter "Class DOMDocument not found":
+- Install php-xml extension
+  Ubuntu/Debian: sudo apt-get install php-xml
+  macOS: Already included with PHP
+
+If migrations fail:
+- Ensure database file exists: touch database/database.sqlite
+- Check file permissions: chmod 664 database/database.sqlite
+- Check directory permissions: chmod 775 database/
+
+If OTP is not showing:
+- Check Laravel logs: storage/logs/laravel.log
+- OTP is logged for development purposes
+
+================================================================================
+  DEPLOYMENT NOTES
+================================================================================
+
+For production deployment:
+1. Set APP_ENV=production in .env
+2. Set APP_DEBUG=false in .env
+3. Configure proper mail driver for OTP delivery
+4. Run: php artisan config:cache
+5. Run: php artisan route:cache
+6. Run: php artisan view:cache
+7. Set proper file permissions
+8. Configure web server (Apache/Nginx)
+9. Enable HTTPS/SSL
+10. Setup proper database (MySQL/PostgreSQL for production)
+
+================================================================================
+  SUPPORT
+================================================================================
+
+For any questions or issues:
+Developer: K. M. Nethmi Sanjalee
+Organization: ALL TECHNOLOGY
+Email: kokiladulshan021@gmail.com
+
+For detailed documentation, see SETUP_GUIDE.md
+
+================================================================================

@@ -1,59 +1,158 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Secure Jewellery Management System (SJM)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A premium, secure web application for managing jewellery business operations with a luxury dark theme and OTP-based authentication.
 
-## About Laravel
+**Database:** Supabase PostgreSQL (Migrated from SQLite)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Developer Information
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Developed by:** K. M. Nethmi Sanjalee
+**Organization:** ALL TECHNOLOGY
+**Email:** kokiladulshan021@gmail.com
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Features
 
-## Learning Laravel
+### Authentication Module
+- Luxury dark-themed login interface
+- Two-factor authentication with OTP verification
+- 5-minute OTP expiry with countdown timer
+- Secure session management
+- OTP logging and tracking
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Customer Management Module
+- Complete CRUD operations for customers
+- Advanced search and filtering
+- Responsive table with pagination
+- Status management (Active/Inactive)
+- Data validation and error handling
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Profile Management Module
+- View user profile information
+- Edit profile details
+- Secure password change with validation
+- Real-time password matching indicator
 
-## Laravel Sponsors
+### Design Features
+- Luxury dark theme with gold accents (#d4af37)
+- Multiple layered video backgrounds
+- Premium glassmorphism effects
+- Responsive design
+- Smooth animations and transitions
+- Professional typography (Segoe UI)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Technology Stack
 
-### Premium Partners
+- **Framework:** Laravel 12.x
+- **PHP Version:** 8.2+
+- **Database:** Supabase PostgreSQL
+- **Frontend:** Blade Templates, Vanilla JavaScript, Custom CSS
+- **Security:** Bcrypt hashing, CSRF protection, OTP verification, Row Level Security (RLS)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Quick Start
 
-## Contributing
+### Prerequisites
+- PHP 8.2+ with required extensions (PDO, PostgreSQL PDO, XML, DOM, cURL, mbstring)
+- Composer
+- Node.js and npm
+- Supabase Account (database already configured)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Installation
 
-## Code of Conduct
+```bash
+# 1. Install dependencies
+composer install
+npm install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 2. Setup environment
+cp .env.example .env
+php artisan key:generate
 
-## Security Vulnerabilities
+# 3. Configure database password in .env
+# Update DB_PASSWORD with your Supabase database password
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 4. Database is already set up in Supabase
+# Tables and admin user are already created
+
+# 5. Build assets
+npm run build
+
+# 6. Start server
+php artisan serve
+```
+
+### Default Login Credentials
+- **Email:** admin@sjm.com
+- **Password:** password123
+
+The OTP code will be logged in the Laravel logs at `storage/logs/laravel.log`
+
+## Documentation
+
+- **PostgreSQL Migration:** See `POSTGRESQL_MIGRATION_COMPLETE.md` for complete migration details
+- **Setup Guide:** See `SETUP_GUIDE.md` for detailed setup instructions
+- **Quick Start:** See `QUICK_START.txt` for quick reference
+
+## Project Structure
+
+```
+app/
+├── Http/Controllers/
+│   ├── AuthController.php          # Authentication & OTP
+│   ├── CustomerController.php      # Customer CRUD
+│   ├── ProfileController.php       # Profile management
+│   └── DashboardController.php     # Dashboard
+├── Models/
+│   ├── User.php
+│   ├── Customer.php
+│   └── OtpLog.php
+resources/
+├── views/
+│   ├── layouts/app.blade.php       # Main layout
+│   ├── auth/                       # Login & OTP pages
+│   ├── customers/                  # Customer management
+│   ├── profile/                    # Profile pages
+│   └── dashboard.blade.php
+Supabase Database (PostgreSQL):
+├── users (with RLS)
+├── customers (with RLS)
+├── otp_logs (with RLS)
+├── sessions (with RLS)
+└── supporting tables
+```
+
+## Security Features
+
+- Bcrypt password hashing (12 rounds)
+- Time-based OTP with expiry (5 minutes)
+- CSRF token protection
+- Server-side input validation
+- XSS protection
+- SQL injection prevention (PDO prepared statements)
+- Secure session handling
+- Row Level Security (RLS) on all database tables
+- Restrictive security policies for data access
+
+## Module Responsibilities
+
+**K. M. Nethmi Sanjalee** is responsible for:
+- Authentication system (Frontend & Backend)
+- OTP verification system
+- Customer management module (Frontend & Backend)
+- Profile management (Frontend & Backend)
+- Luxury dark theme implementation
+- Security implementation
+
+## Support
+
+For questions, issues, or support:
+- Developer: K. M. Nethmi Sanjalee
+- Organization: ALL TECHNOLOGY
+- Email: kokiladulshan021@gmail.com
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This is proprietary software developed for ALL TECHNOLOGY.
+
+---
+
+**Built with Laravel** - The PHP Framework for Web Artisans
