@@ -1,10 +1,10 @@
-// server.js (or index.js)
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import { OpenAI } from "openai"; // Added OpenAI import
+import { OpenAI } from "openai";
 
+// Import Routes
 import supplierRoutes from "./routes/supplierRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
 import stockRoutes from "./routes/stockRoutes.js";
@@ -13,14 +13,19 @@ import authRoutes from "./routes/authRoutes.js";
 dotenv.config();
 const app = express();
 
-// ✅ SECURITY: Add CORS configuration
+// --- MIDDLEWARE ---
+
+// Security: Enable CORS for your React frontend
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173", // Your React app URL
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true
 }));
-app.use(express.json({ limit: "10mb" })); // Increased limit for base64 images
 
-// ✅ Initialize OpenAI client
+// Increase limit for JSON payloads (useful for base64 strings or complex design objects)
+app.use(express.json({ limit: "10mb" }));
+
+// --- AI INITIALIZATION ---
+
 let openai;
 if (process.env.OPENAI_API_KEY) {
   openai = new OpenAI({
@@ -31,21 +36,27 @@ if (process.env.OPENAI_API_KEY) {
   console.warn("⚠️  OPENAI_API_KEY not found. AI features disabled.");
 }
 
-// ✅ MongoDB Connection
+// --- DATABASE CONNECTION ---
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err.message));
 
-// ✅ Existing Routes
+// --- EXISTING ROUTES ---
+
 app.use("/api/auth", authRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/stock", stockRoutes);
 
-// ✅ NEW: AI Design Generation Endpoint
+// --- AI DESIGN STUDIO ENDPOINTS ---
+
+/**
+ * @route   POST /api/designs/generate
+ * @desc    Generate a jewelry design image using OpenAI DALL-E 3
+ */
 app.post("/api/designs/generate", async (req, res) => {
-  // Check if OpenAI is configured
   if (!openai) {
     return res.status(503).json({
       success: false,
@@ -62,7 +73,6 @@ app.post("/api/designs/generate", async (req, res) => {
       customizations = {}
     } = req.body;
 
-    // Validate required field
     if (!designPrompt?.trim()) {
       return res.status(400).json({
         success: false,
@@ -72,9 +82,9 @@ app.post("/api/designs/generate", async (req, res) => {
 
     console.log(`📸 Generating ${designType} design: "${designPrompt.substring(0, 50)}..."`);
 
-    // ✅ Build professional jewelry prompt
-    const materialNames = materials.map(m => m.name).join(", ") || "gold";
-    const gemstoneNames = gemstones.map(g => g.name).join(", ") || "diamond";
+    // Build the descriptive prompt for DALL-E
+    const materialNames = materials.map(m => m.name).join(", ") || "precious metal";
+    const gemstoneNames = gemstones.map(g => g.name).join(", ") || "clear stones";
     
     const aiPrompt = `
       Create a photorealistic, professional product image of a ${designType} for a jewelry e-commerce website.
@@ -96,23 +106,22 @@ app.post("/api/designs/generate", async (req, res) => {
       - Focus on the single piece of jewelry
     `;
 
-    // ✅ Call DALL-E 3 API
+    // Call OpenAI Image Generation API
     const response = await openai.images.generate({
       model: "dall-e-3",
       prompt: aiPrompt,
       n: 1,
       size: "1024x1024",
-      quality: "standard", // "standard" or "hd" (HD costs 2x)
-      style: "natural" // "natural" or "vivid"
+      quality: "standard", 
+      style: "natural"
     });
 
-    // ✅ Extract image URL
     const imageUrl = response.data[0].url;
     const revisedPrompt = response.data[0].revised_prompt || aiPrompt;
 
     console.log("✅ AI design generated successfully");
 
-    // ✅ Create design object to potentially save to DB
+    // Construct the design object for the frontend
     const designData = {
       id: Date.now().toString(),
       title: designPrompt.substring(0, 50) + (designPrompt.length > 50 ? "..." : ""),
@@ -123,13 +132,12 @@ app.post("/api/designs/generate", async (req, res) => {
       gemstones: gemstones,
       customizations: customizations,
       imageUrl: imageUrl,
-      estimatedCost: Math.floor(Math.random() * 5000) + 1000, // Mock for now
+      estimatedCost: Math.floor(Math.random() * 5000) + 1000, // Placeholder calculation
       complexity: customizations.complexity || "medium",
       createdAt: new Date().toISOString(),
       isAIGenerated: true
     };
 
-    // ✅ Return success response
     res.status(200).json({
       success: true,
       message: "AI design generated successfully",
@@ -139,7 +147,6 @@ app.post("/api/designs/generate", async (req, res) => {
   } catch (error) {
     console.error("❌ OpenAI API Error:", error.message);
     
-    // Handle different types of OpenAI errors
     let errorMessage = "AI image generation failed";
     let statusCode = 500;
     
@@ -159,14 +166,15 @@ app.post("/api/designs/generate", async (req, res) => {
   }
 });
 
-// ✅ NEW: Design History Endpoint (Replace your mock one)
+/**
+ * @route   GET /api/designs/history
+ * @desc    Fetch design history (Mock logic until DB model is ready)
+ */
 app.get("/api/designs/history", async (req, res) => {
   try {
-    // For now, return empty array or mock data
-    // Later, you can connect this to MongoDB
     res.status(200).json({
       success: true,
-      data: [], // Empty until you implement DB storage
+      data: [], // DB integration pending
       message: "Design history (DB integration pending)"
     });
   } catch (error) {
@@ -177,13 +185,15 @@ app.get("/api/designs/history", async (req, res) => {
   }
 });
 
-// ✅ NEW: Save Design to Database Endpoint
+/**
+ * @route   POST /api/designs/save
+ * @desc    Persist a generated design to MongoDB
+ */
 app.post("/api/designs/save", async (req, res) => {
   try {
     const design = req.body;
     
-    // TODO: Save to MongoDB when you create a Design model
-    // For now, just acknowledge receipt
+    // Log the action; logic here will change once Design Model is defined
     console.log("💾 Design saved (DB integration pending):", design.title);
     
     res.status(200).json({
@@ -199,8 +209,11 @@ app.post("/api/designs/save", async (req, res) => {
   }
 });
 
-// ✅ Root endpoint
+// --- BASE ENDPOINT ---
+
 app.get("/", (req, res) => res.send("🚀 Jewelry Management API with AI Design Studio"));
+
+// --- SERVER START ---
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
